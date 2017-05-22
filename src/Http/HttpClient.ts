@@ -15,33 +15,38 @@ export class HttpClient implements IHttpClient{
 
     private send(method:string,url:string,headers?:Map<string,string>,data?:string):Promise<string>{
         return new Promise<string>((resolve,reject)=>{
-            let xhr = new XMLHttpRequest();
-
-            xhr.open(method,url,true);
-            
-            if(headers){
-                headers.forEach((val,key)=>xhr.setRequestHeader(key,val));
+            if(XMLHttpRequest){
+                let xhr = new XMLHttpRequest();
+                xhr.open(method,url,true);
+                if(headers){
+                    headers.forEach((val,key)=>xhr.setRequestHeader(key,val));
+                }
+                xhr.send(data)
+                
+                xhr.onload = ()=>{
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(xhr.response);
+                    }
+                    else {
+                        reject({
+                            status: xhr.status,
+                            statusText: xhr.statusText
+                        });
+                    }
+                };
+                xhr.onerror = ()=>{
+                    reject({
+                        status: xhr.status,
+                        statusText: xhr.statusText
+                    });
+                };
+            }else{
+                wx.request({data:data,header:headers,method:method,url:url,fail:()=>{reject();},success:(res)=>{
+                    if(res){
+                        resolve(JSON.stringify(res.data));
+                    }
+                }});
             }
-            xhr.send(data)
-
-            xhr.onload = ()=>{
-                 if (xhr.status >= 200 && xhr.status < 300) {
-                    resolve(xhr.response);
-                }
-                else {
-                     reject({
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-                }
-            };
-
-            xhr.onerror = ()=>{
-                 reject({
-                        status: xhr.status,
-                        statusText: xhr.statusText
-                    });
-            };
         });
     }
 
