@@ -1,0 +1,16 @@
+{
+  "name": "weapp-signalr",
+  "version": "1.0.0",
+  "description": "SignalR client for weapp (without jQuery dependency)",
+  "main": "./build/test.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "zsy",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-typescript": "^3.1.6",
+    "typescript": "^2.3.2"
+  }
+}
