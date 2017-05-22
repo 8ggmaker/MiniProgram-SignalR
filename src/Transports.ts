@@ -34,12 +34,6 @@ class HttpBasedTransport{
         this.httpClient = new HttpClient();
         this.urlBuilder = new UrlBuilder(connectionInfo);
 
-        // return new Promise<NegotiateResponse>((reslove,reject)=>{
-        //     let url = this.urlBuilder.buildNegotiateUrl(this.getName());
-        //     this.httpClient.get("GET").then((res)=>{
-        //         reslove(JSON.parse(res) as NegotiateResponse);
-        //     }).catch((e)=>{throw e});
-        // });
         let url = this.urlBuilder.buildNegotiateUrl(this.getName());
         return this.httpClient.get(url).then((res)=>{
             return JSON.parse(res) as NegotiateResponse}
@@ -78,7 +72,7 @@ class HttpBasedTransport{
     }
 }
 export class WebSocketTransport extends HttpBasedTransport implements ITransport{
-     private websocket: WebSocket;
+     private websocket: any;
      private reconnectDelay: number = 2;
 
      supportKeepAlive:boolean = true;
@@ -122,45 +116,79 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
 
          return new Promise<void>((reslove,reject)=>{
             let transport = this;
-            let websocket = new WebSocket(url);
-            var opened = false; 
 
             if(!isReconnect){
                 this.initCallback = ()=>{ reslove();};
             }
-
-            websocket.onopen = (event:Event)=>{
-                transport.websocket = websocket;
-                if(isReconnect){
-                    reslove();
-                }
-            };
-
-            websocket.onerror = (event:Event)=>{
-                reject();
-            };
-
-            websocket.onmessage = (message:MessageEvent)=>{
-                if(transport.onMessageReceived){
-                    transport.processMessage(message.data);
-                }
-            };
-
-            websocket.onclose = (event:CloseEvent)=>{
-                if(transport && event.wasClean == false){
-                    if(transport.onError){
-                        transport.onError(new Error(`${event.reason}`));
+            if(WebSocket){
+                let websocket = new WebSocket(url);
+                websocket.onopen = (event:Event)=>{
+                    transport.websocket = websocket;
+                    if(isReconnect){
+                        reslove();
+                    }
+                };
+                
+                websocket.onerror = (event:Event)=>{
+                    reject();
+                };
+                
+                websocket.onmessage = (message:MessageEvent)=>{
+                    if(transport.onMessageReceived){
+                        transport.processMessage(message.data);
+                    }
+                };
+                
+                websocket.onclose = (event:CloseEvent)=>{
+                    if(transport && event.wasClean == false){
+                        if(transport.onError){
+                            transport.onError(new Error(`${event.reason}`));
+                        }
+                    }
+                    if(transport){
+                        if(transport.abortHandler.tryCompeleteAbort()){
+                            return
+                        }
+                        if(transport.needConnect){
+                            transport.needConnect();
+                        }
                     }
                 }
+            }else{
+                wx.connectSocket({url:url});
 
-                if(transport){
-                    if(transport.abortHandler.tryCompeleteAbort()){
-                        return
+                wx.onSocketOpen(function(res){
+                    transport.websocket = 'wx';
+                    if(isReconnect){
+                        reslove()
                     }
-                    if(transport.needConnect){
-                        transport.needConnect();
+                });
+
+                wx.onSocketError(function(res){
+                    reject();
+                });
+
+                wx.onSocketMessage(function(res){
+                    if(transport.onMessageReceived){
+                        if(res && typeof res.data === 'string'){
+                            transport.processMessage(res.data);
+                        }
                     }
-                }
+                });
+
+                wx.onSocketClose(function(res){
+                    if(transport){
+                        if(transport.onError){
+                            transport.onError(new Error(`wx socket closed`));
+                        }
+                        if(transport.abortHandler.tryCompeleteAbort()){
+                            return
+                        }
+                        if(transport.needConnect){
+                            transport.needConnect();
+                        }
+                    }
+                });
 
             }
          });
