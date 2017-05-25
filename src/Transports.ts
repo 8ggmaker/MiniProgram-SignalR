@@ -11,6 +11,7 @@ class TransportAbortHandler{
 
 class HttpBasedTransport{
     initCallback?: ()=>void;
+    initErrorCallback?: ()=>void;
 
     httpClient: IHttpClient
     urlBuilder: UrlBuilder
@@ -114,12 +115,20 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
 
      private performConnect(url:string,isReconnect:boolean):Promise<void>{
 
+
          return new Promise<void>((reslove,reject)=>{
+
             let transport = this;
+            var opened = false;
+
+            let connectTimeoutHandler = setTimeout(()=>{
+                reject(new Error("time out to connect"));
+            },transport.connectionInfo.transportConnectTimeout);
 
             if(!isReconnect){
-                this.initCallback = ()=>{ reslove();};
+                this.initCallback = ()=>{ clearTimeout(connectTimeoutHandler); reslove();};
             }
+            this.initErrorCallback = ()=>{clearTimeout(connectTimeoutHandler);reject();};
             if(WebSocket){
                 let websocket = new WebSocket(url);
                 websocket.onopen = (event:Event)=>{
@@ -130,7 +139,10 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 };
                 
                 websocket.onerror = (event:Event)=>{
-                    reject();
+                    if(this.initErrorCallback){
+                        this.initErrorCallback();
+                        this.initErrorCallback = undefined;
+                    }
                 };
                 
                 websocket.onmessage = (message:MessageEvent)=>{
