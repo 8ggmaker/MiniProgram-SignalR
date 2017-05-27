@@ -123,7 +123,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
 
             let connectTimeoutHandler = setTimeout(()=>{
                 reject(new Error("time out to connect"));
-            },transport.connectionInfo.transportConnectTimeout);
+            },transport.connectionInfo.transportConnectTimeout * 1000);
 
             if(!isReconnect){
                 this.initCallback = ()=>{ clearTimeout(connectTimeoutHandler); reslove();};
