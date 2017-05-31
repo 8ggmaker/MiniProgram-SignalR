@@ -123,3 +123,12 @@ export class NegotiateResponse{
 function isInteger(x:any) {
     return (typeof x === 'number') && (x % 1 === 0);
 }
+
+export class Utils{
+    static jsonSerialize(data:any):string{
+        if (typeof (data) === "string" || typeof (data) === "undefined" || data === null) {
+            return data;
+        }
+        return JSON.stringify(data);
+    }
+}

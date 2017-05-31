@@ -1,4 +1,4 @@
-import {Started,Closed,Reconnecting,Reconnected,Exception,Received,NeedReconnect,NegotiateResponse,ConnectionInfo,ConnectionState} from "./Common"
+import {Utils,NegotiateResponse,ConnectionInfo,ConnectionState} from "./Common"
 import {UrlBuilder} from "./UrlBuilder"
 import {ITransport} from "./ITransport"
 import {IHttpClient,HttpClient} from "./Http/HttpClient"
@@ -142,6 +142,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
 
      send(data:any):Promise<any>{
          return new Promise((reslove,reject)=>{
+            data = Utils.jsonSerialize(data);
             if(WebSocket&&this.websocket instanceof WebSocket){
                 try{
                     this.websocket.send(data);
