@@ -1,18 +1,12 @@
-import {Started,Closed,Reconnecting,Reconnected,Exception,Received,NeedReconnect,ConnectionInfo,NegotiateResponse} from "./Common"
-
+import {NegotiateResponse} from "./Common"
+import {Connection} from "./Connection"
 export interface ITransport{
-    onStarted?: Started;
-    onClosed?: Closed;
-    onReconnecting?: Reconnecting;
-    onReconnected?: Reconnected;
-    onError?: Exception;
-    onMessageReceived?:Received;
-    needReconnect?:NeedReconnect;
-    negotiate(connectionInfo:ConnectionInfo):Promise<NegotiateResponse>
+    negotiate(connection:Connection):Promise<NegotiateResponse>
     start():Promise<void>;
-    send(data:string):void;
+    send(data:any):Promise<any>;
     getName():string;
     stop():void;
     supportKeepAlive:boolean;
     doReconnect():void;
+    lostConnection():void;
 }

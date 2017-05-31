@@ -33,7 +33,7 @@ export class HeartBeatMonitor{
         clearInterval(this.beatHandlerInterval);
     }
     private heartBeat(){
-        let timeElapsed = Date.now() - this.connection.lastMessageAt.getTime();
+        let timeElapsed = Date.now() - this.connection.connectionInfo.lastMessageAt;
         this.beat(timeElapsed);
     }
 
@@ -46,11 +46,11 @@ export class HeartBeatMonitor{
     }
 
     private checkKeepAlive(timeElapsed:number){
-        if(this.connection.connectionInfo.state == ConnectionState.connected){
+        if(this.connection.connectionInfo.state === ConnectionState.connected){
             if(this.connection.keepAliveData && timeElapsed >= this.connection.keepAliveData.timeout){
                 if(!this.timeout){
                     this.timeout = true;
-                    this.connection.lostConnection();
+                    this.connection.transport.lostConnection();
                 }
             }else if(this.connection.keepAliveData && timeElapsed >= this.connection.keepAliveData.timeoutWarning){
                 if(!this.hasBeenWarned){
@@ -76,7 +76,6 @@ export class Connection{
     connectionInfo:ConnectionInfo;
     transport: ITransport
     keepAliveData: KeepAliveData;
-    lastMessageAt: Date;
     connectionId: string;
 
     started?: Started;
@@ -102,13 +101,11 @@ export class Connection{
             query = this.createQuerystring(queryString);
         }
 
-        this.connectionInfo = new ConnectionInfo(url,new Date(),ConnectionState.disconnected,query);
-        this.lastMessageAt = new Date();
+        this.connectionInfo = new ConnectionInfo(url,new Date().getTime(),new Date().getTime(),ConnectionState.disconnected,query);
     }
 
 
     start(transport:ITransport):Promise<void>{
-        this.registerConnectionEvent(transport);
         this.transport = transport;
 
         if(!this.changeState(ConnectionState.disconnected,ConnectionState.connecting)){
@@ -117,7 +114,7 @@ export class Connection{
 
         this.connectionInfo.connectionData = this.onSending();
 
-        return this.transport.negotiate(this.connectionInfo).then((res)=>{
+        return this.transport.negotiate(this).then((res)=>{
             this.verifyClientProtocol(res.ProtocolVersion);
             this.connectionInfo.connectionToken = res.ConnectionToken;
             this.connectionId = res.ConnectionId;
@@ -144,9 +141,9 @@ export class Connection{
             if (this.started){
                 this.started();
             }
-            this.connectionInfo.lastActive = new Date();
+            this.connectionInfo.lastActive = new Date().getTime();
 
-            this.lastMessageAt = new Date();
+            this.connectionInfo.lastMessageAt = new Date().getTime();
             
             this.heartBeatMonitor.start();
         }).catch(e=>{
@@ -159,8 +156,28 @@ export class Connection{
         return this.transport.start();
     }
 
-    markActive(){
+    stop():Promise<void>;
+    stop(error?:Error,timeout?:number):Promise<void>{
+        if(error){
+            this.onError(error);
+        }
+        if(!timeout){
+            timeout = Connection.defaultAbortTimeout;
+        }
 
+        return new Promise<void>((reslove,reject)=>{});
+    }
+
+    markActive(){
+        TransportHelper.verifyLastActive(this).then(res=>{
+            if(res){
+                this.connectionInfo.lastActive = new Date().getTime();
+            }
+        })
+    }
+
+    markLastMessage(){
+        this.connectionInfo.lastMessageAt = new Date().getTime();
     }
 
     lostConnection(){
@@ -168,32 +185,29 @@ export class Connection{
     }
 
     changeState(oldState:ConnectionState,newState:ConnectionState):boolean{
-        if(this.connectionInfo.state == oldState){
+        if(this.connectionInfo.state === oldState){
             this.connectionInfo.state = newState;
             return true;
         }
         return false;
     }
 
+    ensureReconnecting():boolean{
+        if(this.changeState(ConnectionState.connected,ConnectionState.reconnecting)===true){
+            this.onReconnecting();
+        }
+        return this.connectionInfo.state === ConnectionState.reconnecting;
+    }
+
     onSending():string{
         return '';
     }
 
-    private verifyClientProtocol(protocol:string){
-        var version = Version.parse(protocol);
-        if(!this.connectionInfo.clientProtocol.isEqual(version)){
-            throw new Error(`protocol version not match, client version:${this.connectionInfo.clientProtocol.toString()}, server version:${version.toString()}`);
-        }
-    }
+    onMessageReceived(message:string){
 
-    private registerConnectionEvent(transport: ITransport){
-        transport.onStarted = this.onStarted;
-        transport.onClosed = this.onClosed;
-        transport.onReconnecting = this.onReconnecting;
-        transport.onReconnected = this.onReconnected;
-        transport.onError = this.onError;
-        transport.onMessageReceived = this.onMessageReceived;
-        transport.needReconnect = this.onNeedReconnect;
+        if(this.received){
+            this.received(message);
+        }
     }
 
     onConnectionSlow(){
@@ -202,45 +216,40 @@ export class Connection{
         }
     }
 
-    private onStarted(){
+    onStarted(){
         if(this.started){
             this.started();
         }
     }
 
-    private onClosed(){
+    onClosed(){
         if(this.closed){
             this.closed();
         }
     }
 
-    private onReconnecting(){
+    onReconnecting(){
         if(this.reconnecting){
             this.reconnecting();
         }
     }
 
-    private onReconnected(){
+    onReconnected(){
         if(this.reconnected){
             this.reconnected();
         }
     }
 
-    private onError(e:Error){
+    onError(e:Error){
         if(this.error){
             this.error(e);
         }
     }
 
-    private onMessageReceived(message:string){
-        if(this.received){
-            this.received(message);
-        }
-    }
-
-    private onNeedReconnect(){
+    onNeedReconnect(){
         this.transport.doReconnect();
     }
+
 
     private createQuerystring(queryDic:Map<string,string>):string{
         var queryString = '';
@@ -248,8 +257,23 @@ export class Connection{
         return queryString.slice(0,-1);
     }
 
-    private verfiyLastActive():boolean{
-        return true;
+    private verifyClientProtocol(protocol:string){
+        var version = Version.parse(protocol);
+        if(!this.connectionInfo.clientProtocol.isEqual(version)){
+            throw new Error(`protocol version not match, client version:${this.connectionInfo.clientProtocol.toString()}, server version:${version.toString()}`);
+        }
+    }
+}
+
+export class TransportHelper{
+    // because weapp do not support sync request call, so make everything promise
+    static verifyLastActive(connection:Connection):Promise<boolean>{
+        return new Promise((reslove,reject)=>{
+            if(new Date().getTime() - connection.connectionInfo.lastActive >= connection.connectionInfo.reconnectWindow){
+                connection.stop().then(()=>{reslove(false)});
+            }
+            reslove(true);
+        })
     }
 }
 

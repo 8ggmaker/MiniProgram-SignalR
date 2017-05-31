@@ -58,8 +58,8 @@ export class Version{
     }
 
     isEqual(version:Version):boolean{
-        return version.major == this.major && version.minor == this.minor 
-                && version.build == this.build && version.revison == this.revison;
+        return version.major === this.major && version.minor === this.minor 
+                && version.build === this.build && version.revison === this.revison;
     }
 
     toString():string{
@@ -88,14 +88,16 @@ export class ConnectionInfo{
     disconnectTimeout:number;
     transportConnectTimeout:number;
     reconnectWindow:number;
-    lastActive:Date;
+    lastActive:number;
+    lastMessageAt:number;
     state: ConnectionState;
 
 
-    constructor(baseUrl:string,lastActive:Date,state:ConnectionState,queryString?:string,headers?:Map<string,string>,connectionToken?:string,
+    constructor(baseUrl:string,lastActive:number,lastMessageAt:number,state:ConnectionState,queryString?:string,headers?:Map<string,string>,connectionToken?:string,
                 connectionData?:string,messageId?:string,groupsToken?:string){
                     this.baseUrl = baseUrl;
                     this.lastActive = lastActive;
+                    this.lastMessageAt = lastMessageAt;
                     this.state = state;
                     this.queryString = queryString;
                     this.headers = headers;
@@ -105,6 +107,7 @@ export class ConnectionInfo{
                     this.groupsToken = groupsToken;
                 }
 }
+
 
 export class NegotiateResponse{
     ConnectionId: string;
