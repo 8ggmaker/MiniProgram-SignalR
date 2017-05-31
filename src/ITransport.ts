@@ -5,7 +5,6 @@ export interface ITransport{
     start():Promise<void>;
     send(data:any):Promise<any>;
     getName():string;
-    stop():void;
     supportKeepAlive:boolean;
     doReconnect():void;
     lostConnection():void;

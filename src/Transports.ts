@@ -131,8 +131,6 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
      private reconnectDelay: number = 2;
 
      supportKeepAlive:boolean = true;
-     
-    
 
      start():Promise<void>{
          var url = this.urlBuilder.buildConnectUrl(this.getName());
@@ -143,6 +141,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
      send(data:any):Promise<any>{
          return new Promise((reslove,reject)=>{
             data = Utils.jsonSerialize(data);
+            //need refactor to handle different environment
             if(WebSocket&&this.websocket instanceof WebSocket){
                 try{
                     this.websocket.send(data);
@@ -161,12 +160,24 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
      getName():string{
          return "webSockets";
      }
-     stop():void{
-
-     }
 
      lostConnection():void{
+         // need refactor to handle different environment
+         if(WebSocket && this.websocket instanceof WebSocket){
+             this.websocket.close();
+             this.websocket = null;
+         }else{
+             wx.closeSocket();
+         }
 
+         if(this.abortHandler.tryCompeleteAbort()){
+             return;
+         }
+         if(this.connection.connectionInfo.state == ConnectionState.disconnected){
+             return;
+         }
+
+         this.doReconnect();
      }
 
      doReconnect(){
@@ -203,6 +214,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 this.initCallback = ()=>{ clearTimeout(connectTimeoutHandler); reslove();};
             }
             this.initErrorCallback = ()=>{clearTimeout(connectTimeoutHandler);reject();};
+            // need refactor to handle different environment
             if(WebSocket){
                 let websocket = new WebSocket(url);
                 websocket.onopen = (event:Event)=>{

@@ -157,6 +157,7 @@ export class Connection{
     }
 
     stop():Promise<void>;
+    stop(error:Error):Promise<void>;
     stop(error?:Error,timeout?:number):Promise<void>{
         if(error){
             this.onError(error);
@@ -164,7 +165,9 @@ export class Connection{
         if(!timeout){
             timeout = Connection.defaultAbortTimeout;
         }
+        if(this.connectionInfo.state === ConnectionState.disconnected){
 
+        }
         return new Promise<void>((reslove,reject)=>{});
     }
 
@@ -178,10 +181,6 @@ export class Connection{
 
     markLastMessage(){
         this.connectionInfo.lastMessageAt = new Date().getTime();
-    }
-
-    lostConnection(){
-
     }
 
     changeState(oldState:ConnectionState,newState:ConnectionState):boolean{
