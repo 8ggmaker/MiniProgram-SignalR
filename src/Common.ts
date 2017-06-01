@@ -5,7 +5,6 @@ export declare type Exception = (e:Error)=>void;
 export declare type Reconnecting = ()=>void;
 export declare type ConnectionSlow = ()=>void;
 export declare type Received = (data:any)=>void;
-export declare type NeedReconnect = ()=>void;
 
 export class Version{
     major: number = 0;

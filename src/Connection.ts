@@ -1,6 +1,6 @@
 import { KeepAliveData } from "./KeepAliveData"
 import { ITransport } from "./ITransport"
-import {Utils,Started,Closed,Reconnecting,Reconnected,Exception,Received,NeedReconnect,ConnectionSlow,Version,PROTOCOL_VERSION,ConnectionState,ConnectionInfo} from "./Common"
+import {Utils,Started,Closed,Reconnecting,Reconnected,Exception,Received,ConnectionSlow,Version,PROTOCOL_VERSION,ConnectionState,ConnectionInfo} from "./Common"
 import {UrlBuilder} from "./UrlBuilder"
 import {Subscriber,EventBus} from "./Subscribe"
 
