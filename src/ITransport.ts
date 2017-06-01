@@ -8,4 +8,5 @@ export interface ITransport{
     supportKeepAlive:boolean;
     doReconnect():void;
     lostConnection():void;
+    abort(timeout:number):Promise<void>;
 }

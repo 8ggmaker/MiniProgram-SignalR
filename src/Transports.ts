@@ -125,6 +125,10 @@ class HttpBasedTransport{
         return shouldReconnect;
 
     }
+
+    abort(timeout:number):Promise<void>{
+        return this.abortHandler.abort(timeout);
+    }
 }
 export class WebSocketTransport extends HttpBasedTransport implements ITransport{
      private websocket: any;

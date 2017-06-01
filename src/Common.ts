@@ -131,4 +131,16 @@ export class Utils{
         }
         return JSON.stringify(data);
     }
+
+    static events:
+    {
+        onStart: "onStart",
+        onReceived: "onReceived",
+        onConnectionSlow:"onConnectionSlow",
+        onReconnecting:"onReconnecting",
+        onReconnected:"onReconnected",
+        onClose:"onClose",
+        onError:"onError",
+        [key:string]:string
+    }
 }

@@ -1,7 +1,8 @@
 import { KeepAliveData } from "./KeepAliveData"
 import { ITransport } from "./ITransport"
-import {Started,Closed,Reconnecting,Reconnected,Exception,Received,NeedReconnect,ConnectionSlow,Version,PROTOCOL_VERSION,ConnectionState,ConnectionInfo} from "./Common"
+import {Utils,Started,Closed,Reconnecting,Reconnected,Exception,Received,NeedReconnect,ConnectionSlow,Version,PROTOCOL_VERSION,ConnectionState,ConnectionInfo} from "./Common"
 import {UrlBuilder} from "./UrlBuilder"
+import {Subscriber,EventBus} from "./Subscribe"
 
 
 
@@ -77,15 +78,7 @@ export class Connection{
     transport: ITransport
     keepAliveData: KeepAliveData;
     connectionId: string;
-
-    started?: Started;
-    closed?: Closed;
-    received?: Received;
-    error?: Exception;
-    reconnecting?: Reconnecting;
-    reconnected?: Reconnected;
-    connectionSlow?: ConnectionSlow;
-
+    eventBus:EventBus;
 
     constructor(url:string,queryString?:Map<string,string>){
         if(!url){
@@ -100,7 +93,8 @@ export class Connection{
         if(queryString){
             query = this.createQuerystring(queryString);
         }
-
+        
+        this.eventBus = new EventBus();
         this.connectionInfo = new ConnectionInfo(url,new Date().getTime(),new Date().getTime(),ConnectionState.disconnected,query);
     }
 
@@ -138,9 +132,8 @@ export class Connection{
         }).then(()=>{
             this.changeState(this.connectionInfo.state,ConnectionState.connected);
             
-            if (this.started){
-                this.started();
-            }
+            this.onStarted();
+
             this.connectionInfo.lastActive = new Date().getTime();
 
             this.connectionInfo.lastMessageAt = new Date().getTime();
@@ -162,15 +155,23 @@ export class Connection{
         if(error){
             this.onError(error);
         }
-        if(!timeout){
-            timeout = Connection.defaultAbortTimeout;
-        }
-        if(this.connectionInfo.state === ConnectionState.disconnected){
+        return new Promise<void>((reslove,reject)=>{
+            if(this.connectionInfo.state == ConnectionState.disconnected){
+                reslove();
+            }
+            let abortTimeout = timeout || Connection.defaultAbortTimeout
+            let abortPromise = this.transport.abort(abortTimeout);
 
-        }
-        return new Promise<void>((reslove,reject)=>{});
+            this.disconnect();
+
+        });
     }
 
+    disconnect(){
+        if(this.connectionInfo.state != ConnectionState.disconnected){
+
+        }
+    }
     markActive(){
         TransportHelper.verifyLastActive(this).then(res=>{
             if(res){
@@ -204,51 +205,77 @@ export class Connection{
 
     onMessageReceived(message:string){
 
-        if(this.received){
-            this.received(message);
-        }
-    }
-
-    onConnectionSlow(){
-        if(this.connectionSlow){
-            this.connectionSlow();
-        }
-    }
-
-    onStarted(){
-        if(this.started){
-            this.started();
-        }
-    }
-
-    onClosed(){
-        if(this.closed){
-            this.closed();
-        }
+        this.eventBus.publish(Utils.events.onReceived,message);
     }
 
     onReconnecting(){
-        if(this.reconnecting){
-            this.reconnecting();
-        }
+        this.eventBus.publish(Utils.events.onReconnecting);
     }
 
     onReconnected(){
-        if(this.reconnected){
-            this.reconnected();
+        this.eventBus.publish(Utils.events.onReconnected);
+    }
+
+    onConnectionSlow(){
+        this.eventBus.publish(Utils.events.onConnectionSlow);
+    }
+
+    onError(error:Error){
+        this.eventBus.publish(Utils.events.onError,error);
+    }
+
+    onStarted(){
+        this.eventBus.publish(Utils.events.onStart);
+    }
+
+    started(callBack:Started){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onStart,callBack);
+            this.eventBus.subscribe(subscriber);
         }
     }
 
-    onError(e:Error){
-        if(this.error){
-            this.error(e);
+    received(callBack:Received){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onReceived,callBack)
+            this.eventBus.subscribe(subscriber);
         }
     }
 
-    onNeedReconnect(){
-        this.transport.doReconnect();
+    connectionSlow(callBack:ConnectionSlow){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onConnectionSlow,callBack);
+            this.eventBus.subscribe(subscriber);
+        }
     }
 
+    reconnecting(callBack:Reconnecting){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onReconnecting,callBack);
+            this.eventBus.subscribe(subscriber);
+        }
+    }
+
+    reconnected(callBack:Reconnected){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onReconnected,callBack);
+            this.eventBus.subscribe(subscriber);
+        }
+    }
+
+    disconnected(callBack:Closed){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onClose,callBack);
+            this.eventBus.subscribe(subscriber);
+        }
+    }
+
+    error(callBack:Exception){
+        if(callBack){
+            let subscriber = new Subscriber(Utils.events.onError,callBack);
+            this.eventBus.subscribe(subscriber);
+        }
+    }
 
     private createQuerystring(queryDic:Map<string,string>):string{
         var queryString = '';
