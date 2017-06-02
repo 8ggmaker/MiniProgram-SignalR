@@ -3,6 +3,7 @@ import { ITransport } from "./ITransport"
 import {Utils,Started,Closed,Reconnecting,Reconnected,Exception,Received,ConnectionSlow,Version,PROTOCOL_VERSION,ConnectionState,ConnectionInfo} from "./Common"
 import {UrlBuilder} from "./UrlBuilder"
 import {Subscriber,EventBus} from "./Subscribe"
+import {WebSocketTransport} from "./Transports";
 
 
 
@@ -98,9 +99,8 @@ export class Connection{
         this.connectionInfo = new ConnectionInfo(url,new Date().getTime(),new Date().getTime(),ConnectionState.disconnected,query);
     }
 
-
-    start(transport:ITransport):Promise<void>{
-        this.transport = transport;
+    start(transport?:ITransport):Promise<void>{
+        this.transport = transport || new WebSocketTransport();
 
         if(!this.changeState(ConnectionState.disconnected,ConnectionState.connecting)){
             throw new Error("a connection is already starting");
@@ -164,12 +164,24 @@ export class Connection{
 
             this.disconnect();
 
+            reslove();
         });
     }
 
     disconnect(){
         if(this.connectionInfo.state != ConnectionState.disconnected){
+            this.connectionInfo.state = ConnectionState.disconnected;
 
+            if(this.heartBeatMonitor){
+                this.heartBeatMonitor.stop();
+                delete this.heartBeatMonitor;
+            }
+
+            delete this.transport;
+            delete this.connectionId;
+            this.connectionInfo.clear();
+
+            this.onDisconnected();
         }
     }
     markActive(){
@@ -226,6 +238,10 @@ export class Connection{
 
     onStarted(){
         this.eventBus.publish(Utils.events.onStart);
+    }
+
+    onDisconnected(){
+        this.eventBus.publish(Utils.events.onClose);
     }
 
     started(callBack:Started){
@@ -296,7 +312,7 @@ export class TransportHelper{
     static verifyLastActive(connection:Connection):Promise<boolean>{
         return new Promise((reslove,reject)=>{
             if(new Date().getTime() - connection.connectionInfo.lastActive >= connection.connectionInfo.reconnectWindow){
-                connection.stop().then(()=>{reslove(false)});
+                connection.stop(new Error("lastactive timeout")).then(()=>{reslove(false)});
             }
             reslove(true);
         })

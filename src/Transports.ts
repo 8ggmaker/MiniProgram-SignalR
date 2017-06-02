@@ -118,7 +118,7 @@ class HttpBasedTransport{
         if(m.S===1){
             if(this.initCallback){
                 this.initCallback();
-                this.initCallback = undefined;
+                delete this.initCallback;
             }
         }
         
@@ -229,9 +229,11 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 };
                 
                 websocket.onerror = (event:Event)=>{
-                    if(this.initErrorCallback){
-                        this.initErrorCallback();
-                        this.initErrorCallback = undefined;
+                    if(transport.initErrorCallback){
+                        transport.initErrorCallback();
+                        delete transport.initErrorCallback;
+                    }else{
+                        reject();
                     }
                 };
                 
@@ -261,7 +263,12 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 });
 
                 wx.onSocketError(function(res){
-                    reject();
+                    if(transport.initErrorCallback){
+                        transport.initErrorCallback();
+                        delete transport.initErrorCallback;
+                    }else{
+                        reject();
+                    }
                 });
 
                 wx.onSocketMessage(function(res){

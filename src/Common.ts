@@ -105,6 +105,15 @@ export class ConnectionInfo{
                     this.messageId = messageId;
                     this.groupsToken = groupsToken;
                 }
+
+    clear(){
+        delete this.lastActive;
+        delete this.lastMessageAt;
+        delete this.messageId;
+        delete this.connectionToken;
+        delete this.groupsToken;
+        delete this.connectionData;
+    }
 }
 
 
