@@ -107,7 +107,10 @@ export class HubProxy{
     }
 
     private extendState(state:{[key:string]:any}){
-
+        this.state = this.state || {};
+        if(state){
+            Object.keys(state).forEach(key=>{this.state[key] = state[key];})
+        }
     }
 
     private generateArgs(args:any[]):any[]{
