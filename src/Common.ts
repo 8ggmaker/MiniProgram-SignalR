@@ -107,12 +107,12 @@ export class ConnectionInfo{
                 }
 
     clear(){
-        delete this.lastActive;
-        delete this.lastMessageAt;
-        delete this.messageId;
-        delete this.connectionToken;
-        delete this.groupsToken;
-        delete this.connectionData;
+        this.lastActive = null;
+        this.lastMessageAt = null;
+        this.messageId = null;
+        this.connectionToken = null;
+        this.groupsToken = null;
+        this.connectionData = null;
     }
 }
 

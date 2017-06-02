@@ -118,7 +118,7 @@ class HttpBasedTransport{
         if(m.S===1){
             if(this.initCallback){
                 this.initCallback();
-                delete this.initCallback;
+                this.initCallback = null;
             }
         }
         
@@ -231,7 +231,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 websocket.onerror = (event:Event)=>{
                     if(transport.initErrorCallback){
                         transport.initErrorCallback();
-                        delete transport.initErrorCallback;
+                        transport.initErrorCallback = null;
                     }else{
                         reject();
                     }
@@ -265,7 +265,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 wx.onSocketError(function(res){
                     if(transport.initErrorCallback){
                         transport.initErrorCallback();
-                        delete transport.initErrorCallback;
+                        transport.initErrorCallback = null;
                     }else{
                         reject();
                     }

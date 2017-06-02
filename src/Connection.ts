@@ -174,11 +174,11 @@ export class Connection{
 
             if(this.heartBeatMonitor){
                 this.heartBeatMonitor.stop();
-                delete this.heartBeatMonitor;
+                this.heartBeatMonitor = null;
             }
 
-            delete this.transport;
-            delete this.connectionId;
+            this.transport = null;
+            this.connectionId = null;
             this.connectionInfo.clear();
 
             this.onDisconnected();
