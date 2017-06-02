@@ -149,6 +149,22 @@ export class Connection{
         return this.transport.start();
     }
 
+    send(data:any):Promise<any>{
+        return new Promise((resolve,reject)=>{
+            if(this.connectionInfo.state === ConnectionState.disconnected){
+                reject(new Error("connection is disconnectd, cannot send data"));
+                return;
+            }
+
+            if(this.connectionInfo.state === ConnectionState.connecting){
+                reject(new Error("connection is connecting, cannot send data"));
+                return;
+            }
+
+            return this.transport.send(data);
+        });
+    }
+
     stop():Promise<void>;
     stop(error:Error):Promise<void>;
     stop(error?:Error,timeout?:number):Promise<void>{

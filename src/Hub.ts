@@ -54,6 +54,15 @@ export class HubInvocation{
 
     //state
     S?:{[key:string]:any}
+
+
+    constructor(hubName:string,method:string,id?:string,args?:Array<any>,state?:{[key:string]:any}){
+        this.H = hubName;
+        this.M = method;
+        this.I = id;
+        this.A = args;
+        this.S = state;
+    }
 }
 export class HubProxy{
     hubName:string;
@@ -65,6 +74,7 @@ export class HubProxy{
         this.hubName = hubName;
     }
 
+    //add progressupdate support ???
     invoke(methodName:string,...args:any[]):Promise<any>{
         if(!methodName){
             throw new Error("invalid method name");
@@ -72,11 +82,46 @@ export class HubProxy{
 
         return new Promise((reslove,reject)=>{
             var callBack = (r:HubResult)=>{
+                if(r.E){
+                    reject(new Error(r.E));//todo need to unify errors (err:string,data?:any)
+                    return;
+                }else{
+                    if(r.S){
+                        this.extendState(r.S);
+                    }
 
+                    if(r.R){
+                        reslove(r.R);
+                    }
+                }
             };
-
             var callbackId = this.connection.registerInvocationCallback(callBack);
+
+            var invocationData = new HubInvocation(this.hubName,methodName,callbackId,this.generateArgs(args),this.state);
+
+            this.connection.send(invocationData).catch(()=>{
+                reject();
+            })
+            
         });
+    }
+
+    private extendState(state:{[key:string]:any}){
+
+    }
+
+    private generateArgs(args:any[]):any[]{
+        if(!args){
+            return null;
+        }
+
+        args.forEach((val,index)=>{
+            if(typeof val === 'undefined'){
+                args[index] = null;
+            }
+        });
+
+        return args;
     }
 }
 
