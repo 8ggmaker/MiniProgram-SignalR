@@ -151,6 +151,7 @@ export class HubConnection extends Connection{
         super(HubConnection.getUrl(url,userDefault),queryString);
         this.hubs = {};
         this.callbacks = {};
+        this.disconnected(this.clearInvocationCallbacks);
     }
 
     get hubNames():string[]{
@@ -179,6 +180,19 @@ export class HubConnection extends Connection{
         this.callbackId += 1;
         
         return resId;
+    }
+
+    clearInvocationCallbacks(error?:Error){
+        let errorCallbacks = Array<(r:HubResult)=>void>()
+        var callbackArray = Object.keys(this.callbacks).forEach(key=>{
+            errorCallbacks.push(this.callbacks[key]);
+            this.callbacks[key] = null;
+        });
+        this.callbacks = null;
+        let hubRes = new HubResult();
+        error = error || new Error("need clear invocation callbacks");
+        hubRes.E = error.message;
+        errorCallbacks.forEach(errorCallback=>errorCallback(hubRes))
     }
 
     onSending():string{
