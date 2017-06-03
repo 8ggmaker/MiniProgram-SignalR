@@ -93,7 +93,9 @@ class HttpBasedTransport{
         let m = JSON.parse(message);
 
         if(m.I){
-            this.connection.onMessageReceived(m);
+            if(!this.connection.connectingMessageBuffer.tryBuffer(m)){
+                this.connection.onMessageReceived(m);
+            }
             return false;
         }
 
@@ -107,7 +109,9 @@ class HttpBasedTransport{
 
         if(m.M && Array.isArray(m.M)){
             m.M.array.forEach((msg:any) => {
-                this.connection.onMessageReceived(msg);
+                if(!this.connection.connectingMessageBuffer.tryBuffer(msg)){
+                    this.connection.onMessageReceived(msg);
+            }
             });
         }else{
             return shouldReconnect;

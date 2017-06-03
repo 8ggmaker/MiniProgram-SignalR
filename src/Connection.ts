@@ -6,7 +6,39 @@ import {Subscriber,EventBus} from "./Subscribe"
 import {WebSocketTransport} from "./Transports";
 
 
+export class ConnectingMessageBuffer{
+    buffer: any[];
+    connection:Connection;
+    drainCallback:(message:any)=>void;
 
+    constructor(connection:Connection,drainCallback:(message:any)=>void){
+        this.buffer = [];
+        this.connection = connection;
+        this.drainCallback = drainCallback;
+    }
+
+    tryBuffer(message:any):boolean{
+        if(this.connection.connectionInfo.state === ConnectionState.connecting){
+            this.buffer.push(message);
+            return true;
+        }
+
+        return false;
+    }
+
+    drain(){
+        if(this.connection.connectionInfo.state === ConnectionState.connected){
+            while(this.buffer.length>0){
+                this.drainCallback(this.buffer.shift());
+            }
+        }
+    }
+
+    clear(){
+        this.buffer = [];
+    }
+
+}
 export class HeartBeatMonitor{
     private connection: Connection;
     private beatInterval: number;
@@ -80,6 +112,7 @@ export class Connection{
     keepAliveData: KeepAliveData;
     connectionId: string;
     eventBus:EventBus;
+    connectingMessageBuffer:ConnectingMessageBuffer;
 
     constructor(url:string,queryString?:Map<string,string>){
         if(!url){
@@ -97,6 +130,7 @@ export class Connection{
         
         this.eventBus = new EventBus();
         this.connectionInfo = new ConnectionInfo(url,new Date().getTime(),new Date().getTime(),ConnectionState.disconnected,query);
+        this.connectingMessageBuffer = new ConnectingMessageBuffer(this,message=>{this.onMessageReceived(message);})
     }
 
     start(transport?:ITransport):Promise<void>{
@@ -131,6 +165,8 @@ export class Connection{
 
         }).then(()=>{
             this.changeState(this.connectionInfo.state,ConnectionState.connected);
+            
+            this.connectingMessageBuffer.drain();
             
             this.onStarted();
 
@@ -196,7 +232,7 @@ export class Connection{
             this.transport = null;
             this.connectionId = null;
             this.connectionInfo.clear();
-
+            this.connectingMessageBuffer.clear();
             this.onDisconnected();
         }
     }
