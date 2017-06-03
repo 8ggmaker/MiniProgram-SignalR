@@ -68,6 +68,7 @@ export class HubProxy{
     hubName:string;
     connection:HubConnection;
     state:{[key:string]:any};
+    subscriptions:{[key:string]:Function}
 
     constructor(connection:HubConnection,hubName:string){
         this.connection = connection;
@@ -104,6 +105,19 @@ export class HubProxy{
             })
             
         });
+    }
+
+    on(eventName:string,func:Function){
+        if(!eventName){
+            throw new Error("invalid event name");
+        }
+
+        this.subscriptions = this.subscriptions || {};
+        eventName = eventName.toLowerCase();
+        var that = this;
+        this.subscriptions[eventName] = function(data:any){
+            func.apply(that,data);
+        };
     }
 
     private extendState(state:{[key:string]:any}){
@@ -171,6 +185,34 @@ export class HubConnection extends Connection{
         let hubRegisterArray = new Array<HubRegistrationData>();
         this.hubNames.forEach(name=>hubRegisterArray.push(new HubRegistrationData(name)));
         return JSON.stringify(hubRegisterArray);
+    }
+
+    onMessageReceived(data:any){
+        if(!data){
+            return;
+        }
+        if(data.P){
+            //todo
+        }else if(data.I){
+            let hubRes = data as HubResult;
+            if(hubRes.I){
+                let invokeCallback = this.callbacks[hubRes.I];
+                this.callbacks[hubRes.I] = null;
+                if(invokeCallback){
+                    invokeCallback(hubRes);
+                }
+            }
+        }else{
+            let clientInvocationData = data as HubInvocation;
+            let hubName = clientInvocationData.H.toLowerCase();
+            let eventName = clientInvocationData.M.toLowerCase();
+
+            if(this.hubs[hubName]){
+                this.hubs[hubName].subscriptions[eventName].apply(clientInvocationData.A);
+            }
+        }
+
+        super.onMessageReceived(data);
     }
 
     static getUrl(url:string,useDefault?:boolean):string{

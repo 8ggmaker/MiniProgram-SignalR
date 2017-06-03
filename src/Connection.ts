@@ -231,7 +231,7 @@ export class Connection{
         return '';
     }
 
-    onMessageReceived(message:string){
+    onMessageReceived(message:any){
 
         this.eventBus.publish(Utils.events.onReceived,message);
     }
