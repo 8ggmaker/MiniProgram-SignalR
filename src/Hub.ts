@@ -243,3 +243,6 @@ export class HubConnection extends Connection{
     }
 }
 
+export {Connection} from "./Connection";
+export {ITransport} from "./ITransport";
+

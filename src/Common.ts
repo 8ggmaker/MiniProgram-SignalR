@@ -128,27 +128,26 @@ export class NegotiateResponse{
     TransportConnectTimeout: number
 }
 
-function isInteger(x:any) {
-    return (typeof x === 'number') && (x % 1 === 0);
-}
-
 export class Utils{
     static jsonSerialize(data:any):string{
         if (typeof (data) === "string" || typeof (data) === "undefined" || data === null) {
             return data;
         }
         return JSON.stringify(data);
-    }
+    } 
 
-    static events:
-    {
-        onStart: "onStart",
-        onReceived: "onReceived",
-        onConnectionSlow:"onConnectionSlow",
-        onReconnecting:"onReconnecting",
-        onReconnected:"onReconnected",
-        onClose:"onClose",
-        onError:"onError",
-        [key:string]:string
+    static events:any ={
+            onStart: "onStart",
+            onReceived: "onReceived",
+            onConnectionSlow:"onConnectionSlow",
+            onReconnecting:"onReconnecting",
+            onReconnected:"onReconnected",
+            onClose:"onClose",
+            onError:"onError"
     }
 }
+
+function isInteger(x:any) {
+    return (typeof x === 'number') && (x % 1 === 0);
+}
+

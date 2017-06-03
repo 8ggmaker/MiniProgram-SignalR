@@ -1,9 +1,29 @@
-var gulp = require("gulp");
-var ts = require("gulp-typescript");
-var tsProject = ts.createProject("tsconfig.json");
+const gulp = require('gulp');
+const browserify = require('browserify');
+const ts = require('gulp-typescript');
+const source = require('vinyl-source-stream');
+const del = require('del');
 
-gulp.task("default", function () {
+const tsProject = ts.createProject('./tsconfig.json');
+const clientOutDir = tsProject.options.outDir;
+
+gulp.task('clean', () => {
+    return del([clientOutDir], { force: true });
+});
+
+gulp.task('compile-ts-client', () => {
     return tsProject.src()
         .pipe(tsProject())
-        .js.pipe(gulp.dest("build"));
+        .pipe(gulp.dest(clientOutDir));
 });
+
+gulp.task('browserify-client', ['compile-ts-client'], () => {
+    return browserify(clientOutDir + '/src/Hub.js', {standalone: 'signalR'})
+        .bundle()
+        .pipe(source('signalr-client.js'))
+        .pipe(gulp.dest(clientOutDir + '/browser'));
+});
+
+gulp.task('build-ts-client', ['clean', 'compile-ts-client', 'browserify-client']);
+
+gulp.task('default', ['build-ts-client']);
