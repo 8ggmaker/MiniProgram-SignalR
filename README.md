@@ -1,5 +1,5 @@
 # weapp-SignalR
-SignalR Client for Weapp
+SignalR Client for weapp and browser, only supports WebSocket now.
 ## How to use
 ### 1. build with gulp
     gulp
