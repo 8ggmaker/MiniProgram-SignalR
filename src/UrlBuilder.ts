@@ -92,14 +92,14 @@ export class UrlBuilder{
 
     private appendMessageId(url:string):string{
         if(this.connectionInfo.messageId){
-            return `${url}messageId=${this.connectionInfo.messageId}`;
+            return `${url}messageId=${this.connectionInfo.messageId}&`;
         }
         return url;
     }
 
     private appendGroupsToken(url:string):string{
         if(this.connectionInfo.groupsToken){
-            return `${url}groupsToken=${this.connectionInfo.groupsToken}`;
+            return `${url}groupsToken=${this.connectionInfo.groupsToken}&`;
         }
 
         return url;

@@ -108,7 +108,7 @@ class HttpBasedTransport{
         }
 
         if(m.M && Array.isArray(m.M)){
-            m.M.array.forEach((msg:any) => {
+            m.M.forEach((msg:any) => {
                 if(!this.connection.connectingMessageBuffer.tryBuffer(msg)){
                     this.connection.onMessageReceived(msg);
             }
@@ -142,7 +142,6 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
 
      start():Promise<void>{
          var url = this.urlBuilder.buildConnectUrl(this.getName());
-         url = url.replace(/^http/, "ws");
          return this.performConnect(url,false).then(()=>this.initReceived());
      }
 
@@ -207,8 +206,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
      }
 
      private performConnect(url:string,isReconnect:boolean):Promise<void>{
-
-
+         url = url.replace(/^http/, "ws");
          return new Promise<void>((reslove,reject)=>{
 
             let transport = this;

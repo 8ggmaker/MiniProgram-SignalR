@@ -363,7 +363,7 @@ export class TransportHelper{
     // because weapp do not support sync request call, so make everything promise
     static verifyLastActive(connection:Connection):Promise<boolean>{
         return new Promise((reslove,reject)=>{
-            if(new Date().getTime() - connection.connectionInfo.lastActive >= connection.connectionInfo.reconnectWindow){
+            if(new Date().getTime() - connection.connectionInfo.lastActive >= connection.connectionInfo.reconnectWindow * 1000){
                 connection.stop(new Error("lastactive timeout")).then(()=>{reslove(false)});
             }
             reslove(true);
