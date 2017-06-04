@@ -222,7 +222,7 @@ export class HubConnection extends Connection{
             let eventName = clientInvocationData.M.toLowerCase();
 
             if(this.hubs[hubName]){
-                this.hubs[hubName].subscriptions[eventName].apply(clientInvocationData.A);
+                this.hubs[hubName].subscriptions[eventName](clientInvocationData.A);
             }
         }
 
