@@ -19,11 +19,11 @@ SignalR Client for weapp and browser, only supports WebSocket now.
     hubConnection.start()
 
 ### 3. connection lifetime event
-    started,
-    received,
-    connectionSlow,
-    reconnecting,
-    reconnected,
-    disconnectd
+    started
+    received
+    connectionSlow
+    reconnecting
+    reconnected
+    disconnected
 
 
