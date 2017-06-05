@@ -2,6 +2,7 @@
 SignalR Client for weapp and browser, only supports WebSocket now.
 ## How to use
 ### 1. build with gulp
+    npm install
     gulp
 ### 2. quick start  
     var signalR = require('yourpath/signalr-client')
@@ -14,7 +15,8 @@ SignalR Client for weapp and browser, only supports WebSocket now.
         hubProxy.invoke(methodname,...args).then(()=>{
 
         })
-    })  
+    })
+    hubConnection.start()
 
 ### 3. connection lifetime event
     started,
