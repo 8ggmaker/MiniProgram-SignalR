@@ -277,6 +277,8 @@ export class Connection{
     }
 
     onReconnected(){
+        this.heartBeatMonitor.reconnected();
+        this.markLastMessage();
         this.eventBus.publish(Utils.events.onReconnected);
     }
 
