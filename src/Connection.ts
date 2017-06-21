@@ -114,7 +114,7 @@ export class Connection{
     eventBus:EventBus;
     connectingMessageBuffer:ConnectingMessageBuffer;
 
-    constructor(url:string,queryString?:Map<string,string>){
+    constructor(url:string,queryString?:{[key:string]:string}){
         if(!url){
             throw new Error("url is null or empty");
         }
@@ -347,9 +347,9 @@ export class Connection{
         }
     }
 
-    private createQuerystring(queryDic:Map<string,string>):string{
+    private createQuerystring(queryDic:{[key:string]:string}):string{
         var queryString = '';
-        queryDic.forEach((val,key)=> queryString = queryString.concat(`${key}=${val}&`));
+        Object.keys(queryDic).forEach(key=>queryString = queryString.concat(`${key}=${queryDic[key]}&`))
         return queryString.slice(0,-1);
     }
 

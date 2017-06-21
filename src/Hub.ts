@@ -147,11 +147,12 @@ export class HubConnection extends Connection{
     hubs:{[key:string]:HubProxy};
     callbacks:{[key:string]:(r:HubResult)=>void};
 
-    constructor(url:string,queryString?:Map<string,string>,userDefault?:boolean){
+    constructor(url:string,queryString?:{[key:string]:string},userDefault?:boolean){
         super(HubConnection.getUrl(url,userDefault),queryString);
         this.hubs = {};
         this.callbacks = {};
         this.disconnected(this.clearInvocationCallbacks);
+        this.reconnecting(this.clearInvocationCallbacks);
     }
 
     get hubNames():string[]{
