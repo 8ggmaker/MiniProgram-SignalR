@@ -258,7 +258,7 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
                 wx.connectSocket({url:url});
 
                 wx.onSocketOpen(function(res){
-                    transport.websocket = 'wx';
+                    transport.websocket = wx;
                     if(isReconnect){
                         reslove()
                     }
