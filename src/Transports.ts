@@ -137,6 +137,7 @@ class HttpBasedTransport{
 export class WebSocketTransport extends HttpBasedTransport implements ITransport{
      private websocket: any;
      private reconnectDelay: number = 2;
+     private reconnectTimeoutHandler: any;
 
      supportKeepAlive:boolean = true;
 
@@ -188,22 +189,25 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
      }
 
      doReconnect(){
-        while(this.connection.ensureReconnecting()){
-            TransportHelper.verifyLastActive(this.connection).then(res=>{
-            let reconnectTimeoutHandler = setTimeout(()=>{
-             if(this.connection.connectionInfo.state === ConnectionState.disconnected){
-                let url = this.urlBuilder.buildReconnectUrl(this.getName());
-                this.performConnect(url,true).then(()=>{
-                    clearTimeout(reconnectTimeoutHandler);
-                    if(this.connection.changeState(ConnectionState.reconnecting,ConnectionState.connected)){
-                        this.connection.onReconnected();
-                    }
-                }).catch(()=>{clearTimeout(reconnectTimeoutHandler);});
-             }
-         },this.reconnectDelay * 1000);
+         //issue change while to if (may lead memory leak)
+        while(!this.reconnectTimeoutHandler){
+            this.reconnectTimeoutHandler = setTimeout(()=>{
+                TransportHelper.verifyLastActive(this.connection).then(res=>{
+                    if(res===true && this.connection.ensureReconnecting()){
+
+                        let url = this.urlBuilder.buildReconnectUrl(this.getName());
+                        this.performConnect(url,true).then(()=>{
+                        clearTimeout(this.reconnectTimeoutHandler);
+                        this.reconnectTimeoutHandler = null;
+                        if(this.connection.changeState(ConnectionState.reconnecting,ConnectionState.connected)){
+                            this.connection.onReconnected();
+                        }
+                    }).catch(()=>{clearTimeout(this.reconnectTimeoutHandler);this.reconnectTimeoutHandler = null;});
+                }
             });
-        }
-     }
+        }, this.reconnectDelay*1000);
+    }
+}
 
      private performConnect(url:string,isReconnect:boolean):Promise<void>{
          url = url.replace(/^http/, "ws");
