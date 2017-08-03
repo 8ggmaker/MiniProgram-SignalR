@@ -184,16 +184,18 @@ export class HubConnection extends Connection{
     }
 
     clearInvocationCallbacks(error?:Error){
-        let errorCallbacks = Array<(r:HubResult)=>void>()
-        var callbackArray = Object.keys(this.callbacks).forEach(key=>{
-            errorCallbacks.push(this.callbacks[key]);
-            this.callbacks[key] = null;
-        });
-        this.callbacks = null;
-        let hubRes = new HubResult();
-        error = error || new Error("need clear invocation callbacks");
-        hubRes.E = error.message;
-        errorCallbacks.forEach(errorCallback=>errorCallback(hubRes))
+        if(this.callbacks){
+            let errorCallbacks = Array<(r:HubResult)=>void>();
+            var callbackArray = Object.keys(this.callbacks).forEach(key=>{
+                errorCallbacks.push(this.callbacks[key]);
+                this.callbacks[key] = null;
+            });
+            this.callbacks = null;
+            let hubRes = new HubResult();
+            error = error || new Error("need clear invocation callbacks");
+            hubRes.E = error.message;
+            errorCallbacks.forEach(errorCallback=>errorCallback(hubRes));
+        }     
     }
 
     onSending():string{
