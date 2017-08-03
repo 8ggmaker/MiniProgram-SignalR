@@ -151,7 +151,7 @@ export class Connection{
 
             var beatInterval = 5;
             if(res.KeepAliveTimeout){
-                this.keepAliveData = new KeepAliveData(res.KeepAliveTimeout);
+                this.keepAliveData = new KeepAliveData(res.KeepAliveTimeout*1000);
                 this.connectionInfo.reconnectWindow = this.connectionInfo.disconnectTimeout + this.keepAliveData.timeout;
 
                 beatInterval = this.keepAliveData.checkInterval;
