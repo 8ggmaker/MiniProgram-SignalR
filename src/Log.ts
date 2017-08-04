@@ -40,7 +40,7 @@ export class Logger{
 
    Logger(logger?:ILogger,logLevel?:LogLevel){
        this.logger = logger || new ConsoleLogger();
-       this.logLevel = logLevel || LogLevel.error;
+       this.logLevel = logLevel || LogLevel.trace;
    }
 
    public trace(message?:any):void{
