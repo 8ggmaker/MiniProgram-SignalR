@@ -217,11 +217,16 @@ export class WebSocketTransport extends HttpBasedTransport implements ITransport
             var opened = false;
 
             let connectTimeoutHandler = setTimeout(()=>{
-                reject(new Error("time out to connect"));
+				if(!opened){
+				    reject(new Error("time out to connect"));
+				}
             },this.connection.connectionInfo.transportConnectTimeout * 1000);
 
             if(!isReconnect){
-                this.initCallback = ()=>{ clearTimeout(connectTimeoutHandler); reslove();};
+                this.initCallback = ()=>{ 
+				opened = true;
+				clearTimeout(connectTimeoutHandler); reslove();
+				};
             }
             this.initErrorCallback = ()=>{clearTimeout(connectTimeoutHandler);reject();};
             // need refactor to handle different environment
